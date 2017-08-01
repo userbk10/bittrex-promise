@@ -10,9 +10,8 @@ class BittrexApi {
         this._apiSecret = settings.apiSecret;
         this._apiKey = settings.apiKey;
 
-        // These are in the constructor in case we want to later extend functionality to other API versions 
-        // or support more than JSON, such as streams.
-        this._json = true ;
+        // Default is a json response using v1.1 of the Bittrex API
+        this._json = settings.json || true ;
         this._version = settings.version || "v1.1";
         this._baseUrl = settings.baseUrl || `https://bittrex.com/api/${this._version}`;
     }
@@ -77,25 +76,69 @@ class BittrexApi {
 
     getMarketHistory(market) {
         let options = {
-            uri: `${this.baseUrl}/public/getmarkethistory?market=${market}`,
+            uri: `${this._baseUrl}/public/getmarkethistory?market=${market}`,
             json: this._json
         };
         return rP(options);
     }
 
-
-    // /market/buylimit
-
     /*
-        The full collection of Market API calls
-        
-        
-        /market/selllimit
-
-        /market/cancel
-
-        /market/getopenorders
+        MARKET APIs
+        "Used to place a buy order in a specific market. Use buylimit to place limit orders. Make sure you have the proper permissions set on your API keys for this call to work"
     */
+
+    getOpenOrders(market) {
+        let nonce = this._getNonce();
+        let fullUri = `${this._baseUrl}/market/getopenorders?nonce=${nonce}&apiKey=${this._apiKey}`;
+        if(market) {
+            fullUri += `&market=${market}`;
+        }
+        let sign = this._getSigning(fullUri);
+        let options = {
+            uri: fullUri,
+            json: this._json,
+            headers: {apisign: sign}
+        };
+        return rP(options);
+    }
+
+    cancelOpenOrder(uuid) {
+        let nonce = this._getNonce();
+        let fullUri = `${this._baseUrl}/market/cancel?nonce=${nonce}&apiKey=${this._apiKey}&uuid=${uuid}`;
+        let sign = this._getSigning(fullUri);
+        let options = {
+            uri: fullUri,
+            json: this._json,
+            headers: {apisign: sign}
+        };
+        return rP(options);
+    }
+
+    marketBuyLimit(market, quantity, rate) {
+        let nonce = this._getNonce();
+        let fullUri = `${this._baseUrl}/market/buylimit?nonce=${nonce}&apiKey=${this._apiKey}&market=${market}&quantity=${quantity}&rate=${rate}`;
+        let sign = this._getSigning(fullUri);
+        let options = {
+            uri: fullUri,
+            json: this._json,
+            headers: {apisign: sign}
+        };
+        return rP(options);
+    }
+    
+    marketSellLimit(market, quantity, rate) {
+        let nonce = this._getNonce();
+        let fullUri = `${this._baseUrl}/market/selllimit?nonce=${nonce}&apiKey=${this._apiKey}&market=${market}&quantity=${quantity}&rate=${rate}`;
+        let sign = this._getSigning(fullUri);
+        let options = {
+            uri: fullUri,
+            json: this._json,
+            headers: {apisign: sign}
+        };
+        return rP(options);      
+    }
+   
+
 
 
 /*
